@@ -108,7 +108,7 @@ cmake and make!
 
 ## Call for IDE Profiles Pull Requests
 
-Help your fellow students!
+Hellp your fellow students!
 
 We decided to create Makefiles with cmake to keep this project as platform
 agnostic as possible. Similarly, we omitted IDE profiles in order to ensure

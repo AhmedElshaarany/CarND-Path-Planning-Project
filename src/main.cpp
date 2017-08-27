@@ -15,6 +15,11 @@
 #define HORIZON_VALUE 30 // meters
 #define SIMULATOR_UPDATE_RATE 0.02 // seconds
 #define NUM_PATH_PLANNER_PTS 50
+#define BUFFER_DISTANCE 30 // meters
+//#define VELOCITY_DECREMENT 0.224 // when divided by update rate, gives 5 m/s^s acceleration
+#define VELOCITY_DECREMENT 0.2 // when divided by update rate, gives 5 m/s^s acceleration
+#define VELOCITY_INCREMENT 0.4 // when divided by update rate, gives 5 m/s^s acceleration
+#define SPEED_LIMIT 50 // mph
 
 
 using namespace std;
@@ -204,13 +209,18 @@ int main() {
   	map_waypoints_dy.push_back(d_y);
   }
 
-  // Define reference velocity in mph
-  double ref_vel = 49.5;
+  // Define reference velocity in mph, start with zero to avoid Jerk (cold start)
+  double ref_vel = 0;
 
   // Define initial lane
   int lane = 1;
+
+  // create a flag and speed for car in front of us
+  bool is_car_within_buffer = false;
+  int car_ahead_id = -1;
+
   
-  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&lane,&ref_vel](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
+  h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,&map_waypoints_dx,&map_waypoints_dy,&lane,&ref_vel,&is_car_within_buffer,&car_ahead_id](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                      uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -252,29 +262,55 @@ int main() {
 		// Get previous path size to help with the transition
 		int prev_path_size = previous_path_x.size();
 
-		/*
+		
 		// if prev_path_size has more than one point, change the car location to it
 		if(prev_path_size > 0){
 		  car_s = end_path_s;
 		}
-
-		// create a flag for car in front of us
-		bool is_car_infront = false;
 
 		// go through the sensor fusion list to check for cars
 		for(int i=0; i < sensor_fusion.size(); i++){
 		  // get d value of other car
 		  float d = sensor_fusion[i][6];
 
-		  // check for cars in own lane
+		  // check for cars in own lane in front of own car
 		  if( d > (4*lane) && d < (4+4*lane)){
 		    // get that car's parameters
 		    double vx = sensor_fusion[i][3];
-		    
+		    double vy = sensor_fusion[i][4];
+		    double other_car_v = sqrt(vx*vx+vy*vy);
+		    double other_car_s = sensor_fusion[i][5];
+
+		    // since we're using previous path points, project the value of s out in time
+		    other_car_s += (double)prev_path_size*SIMULATOR_UPDATE_RATE*other_car_v;
+
+		    // check if car is within buffer distance
+		    if( (other_car_s > car_s) && other_car_s < (car_s+BUFFER_DISTANCE)){
+		      is_car_within_buffer = true;
+		      car_ahead_id = i;			
+		    }
 		  }
 
 		}
-		*/
+
+		// if car in front of own car is too close, try to maintain speed of that car
+		if(is_car_within_buffer){
+		  double car_ahead_vx = sensor_fusion[car_ahead_id][3];
+		  double car_ahead_vy = sensor_fusion[car_ahead_id][4];
+		  double car_ahead_speed = sqrt(car_ahead_vx*car_ahead_vx + car_ahead_vy*car_ahead_vy);
+		  // try to maintain same speed as car ahead until lane shift
+		  if (ref_vel > car_ahead_speed*2.23694){
+		    ref_vel -= VELOCITY_DECREMENT;
+		  }
+		  else {
+		    ref_vel += VELOCITY_INCREMENT;
+		  }
+		}
+		// if no car is within buffer distance, go to top speed of 49.5
+		else if(ref_vel < (SPEED_LIMIT-0.5)){
+		  ref_vel += VELOCITY_INCREMENT;
+		}
+		
 
 		// Define vector of waypoints that are POINTS_SPACING meters apart to be used by spline
 		vector<double> waypoints_x;

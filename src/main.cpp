@@ -17,8 +17,8 @@
 #define NUM_PATH_PLANNER_PTS 50
 #define BUFFER_DISTANCE 30 // meters
 //#define VELOCITY_DECREMENT 0.224 // when divided by update rate, gives 5 m/s^s acceleration
-#define VELOCITY_DECREMENT 0.2 // when divided by update rate, gives 5 m/s^s acceleration
-#define VELOCITY_INCREMENT 0.4 // when divided by update rate, gives 5 m/s^s acceleration
+#define VELOCITY_DECREMENT 0.3 // when divided by update rate, gives 5 m/s^s acceleration
+#define VELOCITY_INCREMENT 0.3 // when divided by update rate, gives 5 m/s^s acceleration
 #define SPEED_LIMIT 50 // mph
 #define LANE_SHIFT_SAFETY_DISTANCE_FRONT 30 // meters
 #define LANE_SHIFT_SAFETY_DISTANCE_BACK 30 // meters
@@ -216,7 +216,7 @@ int main() {
   double ref_vel = 49.5;
 
   // Define initial lane
-  int lane = 1;
+  int lane = 0;
 
   // create a flag and speed for car in front of us
   bool is_car_within_buffer = false;
@@ -370,8 +370,42 @@ int main() {
 		    }
 		  }
 		  // if in left lane
-		  
-		  
+		  else if(lane == 0){
+		    // define useful parameters
+		    int num_cars_right_front = 0;
+		    int num_cars_right_back = 0;
+
+		    // go through the sensor fusion list to see if lane change is possible
+		    for(int i = 0; i < sensor_fusion.size(); i++){
+		      // get other car s and d values
+		      double other_car_s = sensor_fusion[i][5];
+		      double other_car_d = sensor_fusion[i][6];
+
+		      // if other car is in center lane
+		      if( other_car_d > 4 && other_car_d < 8){
+
+			//check if car is in left front position
+			if( other_car_s >= car_s && other_car_s < (car_s + LANE_SHIFT_SAFETY_DISTANCE_FRONT)){
+			  num_cars_right_front +=1;
+			  
+			}
+			else if( other_car_s < car_s && other_car_s > (car_s - LANE_SHIFT_SAFETY_DISTANCE_BACK)){
+			  num_cars_right_back +=1;
+			  
+			}
+		      }
+		    }
+
+		    // if no cars are in center lane, change lane to center lane
+		    if (num_cars_right_front == 0 && num_cars_right_back == 0){
+		      // set lane to center lane
+		      lane = 1;
+		      
+		      // reset car ahead parameters
+		      is_car_within_buffer = false;
+		      car_ahead_id = -1;
+		    }
+		  }
 		}
 		// if no car is within buffer distance, go to top speed of 49.5
 		else if(ref_vel < (SPEED_LIMIT-0.5)){

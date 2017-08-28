@@ -16,13 +16,14 @@
 #define SIMULATOR_UPDATE_RATE 0.02 // seconds
 #define NUM_PATH_PLANNER_PTS 50
 #define BUFFER_DISTANCE 30 // meters
-//#define VELOCITY_DECREMENT 0.224 // when divided by update rate, gives 5 m/s^s acceleration
-#define VELOCITY_DECREMENT 0.3 // when divided by update rate, gives 5 m/s^s acceleration
-#define VELOCITY_INCREMENT 0.3 // when divided by update rate, gives 5 m/s^s acceleration
+#define VELOCITY_DECREMENT 0.3 // when divided by update rate, gives a little over 5 m/s^s acceleration
+#define VELOCITY_INCREMENT 0.3 // when divided by update rate, gives a little over 5 m/s^s deceleration
 #define SPEED_LIMIT 50 // mph
 #define LANE_SHIFT_SAFETY_DISTANCE_FRONT 35 // meters
 #define LANE_SHIFT_SAFETY_DISTANCE_BACK 30 // meters
 #define CENTER_LANE_PRIORITY_BUFFER 25 // meters
+#define EMERGENCY_BUFFER 1 // meters
+#define EMERGENCY_SPEED_DECREMENT 0.36
 
 
 using namespace std;
@@ -271,6 +272,45 @@ int main() {
 		  car_s = end_path_s;
 		}
 
+		
+		// emergency brake logic
+		// some cars change lanes suddenly, so to avoid them, we check if cars
+		// are suddenly in front of the ego-veichle and reduce our speed as fast
+		// as possible to avoid collision without violating the maxmium jerk
+		// constraint
+
+		// we start with the path planner with this logic because it's an emergency
+		
+
+		// go through the sensor the sensor fusion list and check for cars that
+		// are very close to our ego-car only if we have enough points in our path planner
+		
+		
+		for(int i=0; i < sensor_fusion.size(); i++){
+		  // get s and d value of other car
+		  double other_car_s = sensor_fusion[i][5];
+		  double other_car_d = sensor_fusion[i][6];
+		  
+		  // check if car is in our lane
+		  if( other_car_d > (4*lane) && other_car_d < (4+4*lane)){
+		    // check if car is right in front of us
+		    if(other_car_s > car_s && other_car_s < car_s + EMERGENCY_BUFFER ){
+		      // while car is in buffer distance, reduce speed quickly
+		      if( other_car_s < car_s + BUFFER_DISTANCE ){
+			ref_vel -= EMERGENCY_SPEED_DECREMENT;
+
+			cout << "Here" << endl;
+			
+		      }
+		    }
+		  }
+		}
+		 
+		//cout << " Here 2" << endl;
+		
+		// end of emergency brake logic
+		
+
 		// go through the sensor fusion list to check for cars
 		for(int i=0; i < sensor_fusion.size(); i++){
 		  // get d value of other car
@@ -282,7 +322,7 @@ int main() {
 		    double vx = sensor_fusion[i][3];
 		    double vy = sensor_fusion[i][4];
 		    double other_car_v = sqrt(vx*vx+vy*vy);
-		    double other_car_s = sensor_fusion[i][5];
+ 		    double other_car_s = sensor_fusion[i][5];
 
 		    // since we're using previous path points, project the value of s out in time
 		    other_car_s += (double)prev_path_size*SIMULATOR_UPDATE_RATE*other_car_v;
@@ -301,13 +341,17 @@ int main() {
 		  double car_ahead_vx = sensor_fusion[car_ahead_id][3];
 		  double car_ahead_vy = sensor_fusion[car_ahead_id][4];
 		  double car_ahead_speed = sqrt(car_ahead_vx*car_ahead_vx + car_ahead_vy*car_ahead_vy);
+		  double car_ahead_s = sensor_fusion[car_ahead_id][5];
+		  
 		  // try to maintain same speed as car ahead until lane shift
-		  if (ref_vel > car_ahead_speed*2.23694){
+		  // but also maintain safe distance
+		  if (ref_vel > car_ahead_speed*2.23694 && car_ahead_s < car_s +BUFFER_DISTANCE ){
 		    ref_vel -= VELOCITY_DECREMENT;
 		  }
 		  else {
 		    ref_vel += VELOCITY_INCREMENT;
 		  }
+		  
 
 		  // check if in center lane
 		  if(lane == 1){
@@ -449,7 +493,8 @@ int main() {
 		else if(ref_vel < (SPEED_LIMIT-0.5)){
 		  ref_vel += VELOCITY_INCREMENT;
 		}
-		
+
+
 
 		// Define vector of waypoints that are POINTS_SPACING meters apart to be used by spline
 		vector<double> waypoints_x;

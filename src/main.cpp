@@ -11,7 +11,7 @@
 #include "spline.h"
 
 #define MINIMUM_PATH_SIZE 2
-#define POINTS_SPACING 30 // meters
+#define POINTS_SPACING 36 // meters
 #define HORIZON_VALUE 30 // meters
 #define SIMULATOR_UPDATE_RATE 0.02 // seconds
 #define NUM_PATH_PLANNER_PTS 50
@@ -20,9 +20,9 @@
 #define VELOCITY_DECREMENT 0.3 // when divided by update rate, gives 5 m/s^s acceleration
 #define VELOCITY_INCREMENT 0.3 // when divided by update rate, gives 5 m/s^s acceleration
 #define SPEED_LIMIT 50 // mph
-#define LANE_SHIFT_SAFETY_DISTANCE_FRONT 30 // meters
+#define LANE_SHIFT_SAFETY_DISTANCE_FRONT 35 // meters
 #define LANE_SHIFT_SAFETY_DISTANCE_BACK 30 // meters
-
+#define CENTER_LANE_PRIORITY_BUFFER 25 // meters
 
 
 using namespace std;
@@ -213,10 +213,10 @@ int main() {
   }
 
   // Define reference velocity in mph, start with zero to avoid Jerk (cold start)
-  double ref_vel = 49.5;
+  double ref_vel = 0;
 
   // Define initial lane
-  int lane = 0;
+  int lane = 1;
 
   // create a flag and speed for car in front of us
   bool is_car_within_buffer = false;
@@ -385,7 +385,7 @@ int main() {
 		      if( other_car_d > 4 && other_car_d < 8){
 
 			//check if car is in left front position
-			if( other_car_s >= car_s && other_car_s < (car_s + LANE_SHIFT_SAFETY_DISTANCE_FRONT)){
+			if( other_car_s >= car_s && other_car_s < (car_s + LANE_SHIFT_SAFETY_DISTANCE_FRONT - CENTER_LANE_PRIORITY_BUFFER)){
 			  num_cars_right_front +=1;
 			  
 			}
@@ -406,6 +406,44 @@ int main() {
 		      car_ahead_id = -1;
 		    }
 		  }
+		  // else if in right lane
+		  else if(lane == 2){
+		    // define useful parameters
+		    int num_cars_left_front = 0;
+		    int num_cars_left_back = 0;
+
+		    // go through the sensor fusion list to see if lane change is possible
+		    for(int i = 0; i < sensor_fusion.size(); i++){
+		      // get other car s and d values
+		      double other_car_s = sensor_fusion[i][5];
+		      double other_car_d = sensor_fusion[i][6];
+
+		      // if other car is in center lane
+		      if( other_car_d > 4 && other_car_d < 8){
+
+			//check if car is in left front position
+			if( other_car_s >= car_s && other_car_s < (car_s + LANE_SHIFT_SAFETY_DISTANCE_FRONT - CENTER_LANE_PRIORITY_BUFFER)){
+			  num_cars_left_front +=1;
+			  
+			}
+			else if( other_car_s < car_s && other_car_s > (car_s - LANE_SHIFT_SAFETY_DISTANCE_BACK)){
+			  num_cars_left_back +=1;
+			  
+			}
+		      }
+		    }
+
+		    // if no cars are in center lane, change lane to center lane
+		    if (num_cars_left_front == 0 && num_cars_left_back == 0){
+		      // set lane to center lane
+		      lane = 1;
+		      
+		      // reset car ahead parameters
+		      is_car_within_buffer = false;
+		      car_ahead_id = -1;
+		    }
+		  }
+		  
 		}
 		// if no car is within buffer distance, go to top speed of 49.5
 		else if(ref_vel < (SPEED_LIMIT-0.5)){

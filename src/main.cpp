@@ -298,15 +298,12 @@ int main() {
 		      // while car is in buffer distance, reduce speed quickly
 		      if( other_car_s < car_s + BUFFER_DISTANCE ){
 			ref_vel -= EMERGENCY_SPEED_DECREMENT;
-
-			cout << "Here" << endl;
 			
 		      }
 		    }
 		  }
 		}
-		 
-		//cout << " Here 2" << endl;
+		
 		
 		// end of emergency brake logic
 		

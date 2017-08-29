@@ -7,7 +7,7 @@ In this documentation, the code model for generating paths is described. We will
 In lines (13-26) in main.cpp, a few values are defined that are used to tune the performance of the path planner such as lane shift safety distance, speed limit, ...etc. The ego-vehicle is initialized with 0 speed and it should start in the middle lane as shown in lines (216-220).
 
 ### Emergency Break Logic
-Some times cars change lanes suddenly, and in order to avoid crashes, in lines (276-308) of main.cpp, an emergency brake logic is implemented. The main idea is that when a car suddenly changes lanes and is now in front of the ego-vehicle with a predefined emergency buffer distance, the ego-vehicle reduces its speed at a high deceleration rate without violating the jerk constraint.
+Some times cars change lanes suddenly, and in order to avoid crashes, in lines (276-308) of main.cpp, an emergency brake logic is implemented. The main idea is that when a car suddenly changes lanes and is now in front of the ego-vehicle with a predefined emergency buffer distance, the ego-vehicle reduces its speed at a high deceleration rate. It is worth mentioning that emergency breaking might some times lead to breaking the jerk constraint, but that would be better than causing a collision.
 
 ### Car Ahead Detection
 In lines (311-334), the sensor fusion list is iterated and we check if there are any cars in front of us and within the ego-vehicle's pre-defined buffer distance value. If a car is found, we raise a flag and capture that car's id and process it later on. 

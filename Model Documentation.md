@@ -19,7 +19,7 @@ Once a car in our lane is detected, the ego-vehicle reduces its speed and mainta
 For lane changing, the finite state machine (FSM) approach is used. This means that the logic to do a lane change depends on the ego's current lane.
 If the car is in the center lane, we consider both left are right lanes. We use Frenet coordinates to determine which lane has fewer cars ahead of the ego vehicle. Once we calculate those numbers, we get ready to change lanes to the lane with fewer number of cars ahead. Getting ready to do a lane change means checking the lane with the fewer number of cars and checking to see if there is a safe enough gap to do the lane change. A safe gap means that there is enough distance in front of and behin the ego vehicle in the selected lane to do the lane change. We check for the safe gap again using Frenet coordinates. This is shown in lines (353-412) in main.cpp.
 If the ego is in the left lane and there is a car in front of it, we check if there is gap wide enough in the center lane to do a safe lane change. This is shown in lines (413-449).
-If the ego is in the right lane, a logic similar to left lane is implemented in lines (450-488)
+If the ego is in the right lane, a logic similar to left lane is implemented in lines (450-488).
 
 ### Path Planner
 For path planning, we create a vector of waypoints to create a spline that would be used later on to create the ego's path. As Aaron Brown suggested, it turned out to be a great idea to use previous path points to guarantee the continuity of the ego's path as well as its smoothness. In lines (505-565) we use previous path points as well adding more points to the waypoints vector to create the spline.

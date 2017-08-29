@@ -19,8 +19,8 @@
 #define VELOCITY_DECREMENT 0.3 // when divided by update rate, gives a little over 5 m/s^s acceleration
 #define VELOCITY_INCREMENT 0.3 // when divided by update rate, gives a little over 5 m/s^s deceleration
 #define SPEED_LIMIT 50 // mph
-#define LANE_SHIFT_SAFETY_DISTANCE_FRONT 35 // meters
-#define LANE_SHIFT_SAFETY_DISTANCE_BACK 30 // meters
+#define LANE_SHIFT_SAFETY_DISTANCE_FRONT 37 // meters
+#define LANE_SHIFT_SAFETY_DISTANCE_BACK 33 // meters
 #define CENTER_LANE_PRIORITY_BUFFER 25 // meters
 #define EMERGENCY_BUFFER 1 // meters
 #define EMERGENCY_SPEED_DECREMENT 0.36

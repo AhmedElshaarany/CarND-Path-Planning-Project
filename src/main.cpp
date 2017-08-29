@@ -24,6 +24,7 @@
 #define CENTER_LANE_PRIORITY_BUFFER 25 // meters
 #define EMERGENCY_BUFFER 1 // meters
 #define EMERGENCY_SPEED_DECREMENT 0.36
+#define EMERGENCY_BRAKE_ITERATIONS 4
 
 
 using namespace std;
@@ -297,8 +298,9 @@ int main() {
 		    if(other_car_s > car_s && other_car_s < car_s + EMERGENCY_BUFFER ){
 		      // while car is in buffer distance, reduce speed quickly
 		      if( other_car_s < car_s + BUFFER_DISTANCE ){
-			ref_vel -= EMERGENCY_SPEED_DECREMENT;
-			
+			for(int j = 0; j < EMERGENCY_BRAKE_ITERATIONS; j++){
+			  ref_vel -= EMERGENCY_SPEED_DECREMENT;
+			}
 		      }
 		    }
 		  }
